@@ -1,0 +1,17 @@
+*.key
+*.JPG
+*.jpg
+*.png
+*.PNG
+*.pdf
+*.rtf
+*.csv
+*.numbers
+notes/
+.DS_Store
+data/
+Data/
+sfhackathon/
+hackathon/
+landingpage/
+.idea/
