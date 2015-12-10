@@ -1,21 +1,20 @@
 import json
-from pprint import pprint
+# from pprint import pprint
 from dateutil.parser import parse
-import pandas
 from collections import OrderedDict
 
 
-def toStr(v):
+def to_str(_v):
     """
     converts a given value (number of unicode) to string
-    :param v: number of unicode
+    :param _v: number of unicode
     :return: string
     """
 
     try:
-        return str(v)
+        return str(_v)
     except UnicodeEncodeError:
-        return v.encode('ascii', 'replace')
+        return _v.encode('ascii', 'replace')
 
 
 def parse_datetime_str(_s):
@@ -117,114 +116,116 @@ Q5_SUB_QUESTIONS = ['Which 1 of the two services in the previous two questions w
                     'How many times a month do you shop ONLINE?',
                     'How many times a month do you shop IN STORES?']
 
-data = json.load(open('rawResponseData.json', 'r'))  # {respondent ID: {'profile': ..., 'answers': []} }
 
-finalOutput = dict()    # { respondentID: {} }
-outputTsvFile = open('parsedResponses.tsv', 'w')
+if __name__ == '__main__':
 
-# ================== WRITE TSV HEADER ROW ==================
-outputTsvFile.write('\t'.join(
-    [   'ID#',
-        'completionStatus',
-        'timeSpent', 'startTime', 'lastModTime']    # times
-    + USER_PROFILE_QUESTIONS
-    + [QUESTIONS['Q1']]                             # Q1
-    + ['Q2 - ' + s for s in Q2_SUB_QUESTIONS]       # Q2
-    + ['Q3 - ' + s for s in Q3_SUB_QUESTIONS]       # Q3
-    + ['Q4 - ' + s for s in Q4_SUB_QUESTIONS]       # Q4
-    + ['Q5 - ' + s for s in Q5_SUB_QUESTIONS]       # Q5
-    + [QUESTIONS['Q6']]                             # Q6
-) + '\n')
+    data = json.load(open('output/rawResponseData.json', 'r'))  # {respondent ID: {'profile': ..., 'answers': []} }
 
+    finalOutput = dict()    # { respondentID: {} }
+    outputTsvFile = open('output/parsedResponses.tsv', 'w')
 
-for responseId, d in data.iteritems():
-    print '=======', responseId
-
-    res = dict()    # { userInfo: {}, completionStatus:..., times: {}, answers: {} }
-    tsvRow = [responseId]
-
-    # ================== PARSE THE HEADER SECTION ==================
-
-    _, _, completionStatus, _, startTimeStr, lastModTimeStr, timeSpentStr, _ \
-        = d['profile'].strip().split('\n')
-
-    res['completionStatus'] = completionStatus
-    tsvRow += [completionStatus]
-
-    times = OrderedDict([('timeSpent', parse_timespent_str(timeSpentStr)),
-                         ('startTime', str(parse_datetime_str(startTimeStr))),     # str for JSON serialization
-                         ('lastModTime', str(parse_datetime_str(lastModTimeStr)))
-                         ])
-
-    res['times'] = times
-    tsvRow += times.values()
-
-    # ================== PARSE USER PROFILE ==================
-    userInfo = extract_multi_answers(d['answers'][3], USER_PROFILE_QUESTIONS)
-
-    res['userInfo'] = userInfo
-    tsvRow += userInfo.values()
-
-    # ================== PARSE THE ANSWERS ==================
-    res['answers'] = dict()
-
-    q12data = d['answers'][0]
-    q34data = d['answers'][1]
-    q56data = d['answers'][2]
-
-    # --------- PARSE QUESTION 1 ---------
-    q1Ans = extract_single_answer(q12data, QUESTIONS['Q1'], QUESTIONS['Q2'], _replaceNewLineCharWith=' >> ')
-
-    res['answers']['Q1'] = q1Ans
-    tsvRow += [q1Ans]
+    # ================== WRITE TSV HEADER ROW ==================
+    outputTsvFile.write('\t'.join(
+            [   'ID#',
+                'completionStatus',
+                'timeSpent', 'startTime', 'lastModTime']    # times
+            + USER_PROFILE_QUESTIONS
+            + [QUESTIONS['Q1']]                             # Q1
+            + ['Q2 - ' + s for s in Q2_SUB_QUESTIONS]       # Q2
+            + ['Q3 - ' + s for s in Q3_SUB_QUESTIONS]       # Q3
+            + ['Q4 - ' + s for s in Q4_SUB_QUESTIONS]       # Q4
+            + ['Q5 - ' + s for s in Q5_SUB_QUESTIONS]       # Q5
+            + [QUESTIONS['Q6']]                             # Q6
+    ) + '\n')
 
 
-    # --------- PARSE QUESTION 2 ---------
-    q2Ans = extract_multi_answers(
-        extract_single_answer(q12data, QUESTIONS['Q2']),
-        Q2_SUB_QUESTIONS)
+    for responseId, d in data.iteritems():
 
-    res['answers']['Q2'] = q2Ans
-    tsvRow += q2Ans.values()
+        print '=======', responseId
 
-    # --------- PARSE QUESTION 3 ---------
-    q3Ans = extract_multi_answers(
-        extract_single_answer(q34data, QUESTIONS['Q3'], QUESTIONS['Q4']),
-        Q3_SUB_QUESTIONS)
+        dictEntry = dict()    # { userInfo: {}, completionStatus:..., times: {}, answers: {} }
+        tsvRow = [responseId]
 
-    res['answers']['Q3'] = q3Ans
-    tsvRow += q3Ans.values()
+        # ================== PARSE THE HEADER SECTION ==================
 
-    # --------- PARSE QUESTION 4 ---------
-    q4Ans = extract_multi_answers(
-        extract_single_answer(q34data, QUESTIONS['Q4']),
-        Q4_SUB_QUESTIONS)
+        _, _, completionStatus, _, startTimeStr, lastModTimeStr, timeSpentStr, _ \
+            = d['profile'].strip().split('\n')
 
-    res['answers']['Q4'] = q4Ans
-    tsvRow += q4Ans.values()
+        dictEntry['completionStatus'] = completionStatus
+        tsvRow += [completionStatus]
 
-    # --------- PARSE QUESTION 5 ---------
-    q5Ans = extract_multi_answers(
-        extract_single_answer(q56data, QUESTIONS['Q5'], QUESTIONS['Q6']),
-        Q5_SUB_QUESTIONS)
+        times = OrderedDict([('timeSpent', parse_timespent_str(timeSpentStr)),
+                             ('startTime', str(parse_datetime_str(startTimeStr))),     # str for JSON serialization
+                             ('lastModTime', str(parse_datetime_str(lastModTimeStr)))
+                             ])
 
-    res['answers']['Q5'] = q5Ans
-    tsvRow += q5Ans.values()
+        dictEntry['times'] = times
+        tsvRow += times.values()
 
-    # --------- PARSE QUESTION 6 ---------
-    q6Ans = extract_single_answer(q56data, QUESTIONS['Q6'], _replaceNewLineCharWith=' >> ')
+        # ================== PARSE USER PROFILE ==================
+        userInfo = extract_multi_answers(d['answers'][3], USER_PROFILE_QUESTIONS)
 
-    res['answers']['Q6'] = q6Ans
-    tsvRow += [q6Ans]
+        dictEntry['userInfo'] = userInfo
+        tsvRow += userInfo.values()
 
-    # ================== SAVE THE RESULTS ==================
-    outputTsvFile.write('\t'.join([toStr(v) for v in tsvRow]) + '\n')
-    finalOutput[responseId] = res
+        # ================== PARSE THE ANSWERS ==================
+        dictEntry['answers'] = dict()
 
+        q12data = d['answers'][0]
+        q34data = d['answers'][1]
+        q56data = d['answers'][2]
 
-with open('parsedResponses.json', 'w') as fp:
-    json.dump(finalOutput, fp)
+        # --------- PARSE QUESTION 1 ---------
+        q1Ans = extract_single_answer(q12data, QUESTIONS['Q1'], QUESTIONS['Q2'], _replaceNewLineCharWith=' >> ')
 
-outputTsvFile.close()
+        dictEntry['answers']['Q1'] = q1Ans
+        tsvRow += [q1Ans]
 
 
+        # --------- PARSE QUESTION 2 ---------
+        q2Ans = extract_multi_answers(
+                extract_single_answer(q12data, QUESTIONS['Q2']),
+                Q2_SUB_QUESTIONS)
+
+        dictEntry['answers']['Q2'] = q2Ans
+        tsvRow += q2Ans.values()
+
+        # --------- PARSE QUESTION 3 ---------
+        q3Ans = extract_multi_answers(
+                extract_single_answer(q34data, QUESTIONS['Q3'], QUESTIONS['Q4']),
+                Q3_SUB_QUESTIONS)
+
+        dictEntry['answers']['Q3'] = q3Ans
+        tsvRow += q3Ans.values()
+
+        # --------- PARSE QUESTION 4 ---------
+        q4Ans = extract_multi_answers(
+                extract_single_answer(q34data, QUESTIONS['Q4']),
+                Q4_SUB_QUESTIONS)
+
+        dictEntry['answers']['Q4'] = q4Ans
+        tsvRow += q4Ans.values()
+
+        # --------- PARSE QUESTION 5 ---------
+        q5Ans = extract_multi_answers(
+                extract_single_answer(q56data, QUESTIONS['Q5'], QUESTIONS['Q6']),
+                Q5_SUB_QUESTIONS)
+
+        dictEntry['answers']['Q5'] = q5Ans
+        tsvRow += q5Ans.values()
+
+        # --------- PARSE QUESTION 6 ---------
+        q6Ans = extract_single_answer(q56data, QUESTIONS['Q6'], _replaceNewLineCharWith=' >> ')
+
+        dictEntry['answers']['Q6'] = q6Ans
+        tsvRow += [q6Ans]
+
+        # ================== SAVE THE RESULTS ==================
+        outputTsvFile.write('\t'.join([to_str(v) for v in tsvRow]) + '\n')
+        finalOutput[responseId] = dictEntry
+
+
+    with open('output/parsedResponses.json', 'w') as fp:
+        json.dump(finalOutput, fp)
+
+    outputTsvFile.close()
