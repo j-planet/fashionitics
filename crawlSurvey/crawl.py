@@ -68,5 +68,5 @@ for responseId in range(87, 1, -1):
 
 browser.quit()
 
-with open('result.json', 'w') as file:
-    json.dump(res, file)
+with open('rawResponseData.json', 'w') as fp:
+    json.dump(res, fp)
