@@ -7,3 +7,5 @@
 
 * Invalidate some responses. E.g.:
     * Gibberish responses
+* Read and analyze responses
+* Statistical patterns
